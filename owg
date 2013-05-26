@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+USAGE="$(basename "$0") [-e] [-g] user -- Find the email address of any GitHub user \n
+\n
+Where: \n
+    -h, --help Help: display this help message \n
+    -e Event log: show all emails that appear in the user's event log \n
+    -g Gravatar match: attempt to match an event email to the user's Gravatar ID \n"
+
+GITREPO="$HOME/.owg/essay_remote"
+
+create()
+{
+    name=$1
+    gitRemote=`head -n 1 $GITREPO`
+    echo $gitRemote
+    git clone $gitRemote $name
+    cd $name
+    if [ "${2}a" = "a" ]; then
+        git checkout -b $name master
+    else
+        echo $2
+        git checkout -b $name $2
+    fi
+    echo $name > .writing_branch
+}
+
+sync()
+{
+    name=$1
+    cd $name
+    git add *
+    git commit -m "nothing"
+    branch=`head -n 1 .writing_branch`
+    git push origin $branch
+}
+    
+if [ ! "$1" == 'init' ] && [ ! "$1" == 'create' ] && [ ! "$1" == 'sync' ]; then
+    echo $USAGE
+    exit
+fi
+
+if [ ! -e $GITREPO ] && [ ! "$1" == 'init' ]; then
+    ECHO "initialize first"
+    exit
+fi
+
+if [ "$1" == 'init' ]; then
+    if [ -e $GITREPO ]; then
+        echo "old config found"
+        exit
+    fi
+    if [ -z "$2" ]; then
+        echo "specify git url"
+        exit
+    fi
+    [ -d "$HOME/.owg" ] || mkdir -p "$HOME/.owg"
+    echo "$2" > $GITREPO
+elif [ "$1" == 'create' ]; then
+    create "$2" "$3"
+elif [ "$1" == 'sync' ]; then
+    sync "$2"
+fi
+
+
+
+    
+
